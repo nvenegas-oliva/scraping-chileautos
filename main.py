@@ -3,6 +3,8 @@ import logging
 
 from bs4 import BeautifulSoup
 import requests
+from requests.exceptions import InvalidSchema
+from requests.exceptions import ConnectionError
 
 logging.basicConfig(
     level=logging.ERROR,
@@ -11,6 +13,30 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+def get_html(url: str) -> str:
+    """Get html code from a URL.
+    Args:
+        url: URL to visit.
+    Return:
+        HTML code.
+    """
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+    }
+    try:
+        response = requests.get(url, headers=headers)
+    except InvalidSchema:
+        return
+    except ConnectionError:
+        logger.error("Connection error [%s]" % url)
+        return
+    else:
+        if response.status_code != 200:
+            logger.info("Error loading page [%s]" % url)
+            return
+        return response.text
 
 
 def parse_item(item):
@@ -35,10 +61,12 @@ def parse_item(item):
 
 if __name__ == '__main__':
     url = 'https://www.chileautos.cl/vehiculos/ssangyong/tivoli/'
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
 
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        logger.error("Failed to get the page.")
-        return
+    html = get_html(url)
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # listing-item standard
+    # listing-item showcase # premium o otros intereses
+    items = soup.find_all('div', class_='listing-item standard')
+
+    parse_item(items[0])
