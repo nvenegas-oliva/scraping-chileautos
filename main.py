@@ -47,6 +47,8 @@ def parse_item(item):
     price = item['data-webm-price']
     state = item['data-webm-state']
     seller_type = item.find('span', class_='seller-type').contents[-1]
+    year = item.find("a", {
+        "data-webm-clickvalue": "sv-title"}).contents[-1].split(' ')[0]
 
     result = {
         'brand': item['data-webm-make'],
@@ -55,6 +57,7 @@ def parse_item(item):
         'price': item['data-webm-price'],
         'state': item['data-webm-state'],
         'seller_type': item.find('span', class_='seller-type').contents[-1],
+        'year': year,
     }
     # print(f"brand: {brand}")
     # print(f"model: {model}")
@@ -70,9 +73,9 @@ def parse_item(item):
     return result
 
 
-if __name__ == '__main__':
+def scraper(url: str, pagination_limit=5) -> None:
     base_url = "https://www.chileautos.cl"
-    url = 'https://www.chileautos.cl/vehiculos/ssangyong/tivoli/'
+    # url = 'https://www.chileautos.cl/vehiculos/ssangyong/tivoli/'
 
     # html = get_html(url)
     # soup = BeautifulSoup(html, 'html.parser')
@@ -82,14 +85,14 @@ if __name__ == '__main__':
     # items = soup.find_all('div', class_='listing-item standard')
     #
     # parse_item(items[0])
-
-    PAGINATION_LIMIT = 5
-    for i in range(PAGINATION_LIMIT):
+    result = []
+    for i in range(pagination_limit):
         logger.info(f"Scraping [{url}]")
         soup = BeautifulSoup(get_html(url), 'html.parser')
         items = soup.find_all('div', class_='listing-item standard')
         for item in items:
             logger.debug(parse_item(item))
+            result.append(parse_item(item))
         next_btn = soup.find('a', class_='page-link next')
         if next_btn and 'href' in next_btn.attrs:
             url = base_url + next_btn.attrs['href']
@@ -101,3 +104,17 @@ if __name__ == '__main__':
             break
         else:
             logger.error("PAGINATION ERROR")
+    return result
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Scraping chileautos.cl')
+    parser.add_argument('--page', help='URL for the start page', required=True)
+    parser.add_argument(
+        '--pagination_limit',
+        help='Maximum number of pages visited',
+        required=True)
+    args = parser.parse_args()
+
+    scraper(url=args.page, pagination_limit=10)
