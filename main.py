@@ -68,8 +68,8 @@ def parse_item(item):
 
     for key_detail in item.find_all("div", class_="key-detail-value"):
         key_detail_type = key_detail['data-type'].lower().replace(" ", "_")
-        # print(f"{key_detail_type}: {key_detail.contents[-1]}")
-        result[key_detail_type]: key_detail.contents[-1]
+        # logger.debug(f"{key_detail_type}: {key_detail.contents[-1]}")
+        result[key_detail_type] = key_detail.contents[-1]
     return result
 
 
