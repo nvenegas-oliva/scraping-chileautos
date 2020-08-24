@@ -40,6 +40,7 @@ def get_html(url: str) -> str:
 
 
 def parse_item(item):
+    result = {}
     brand = item['data-webm-make']
     model = item['data-webm-model']
     net_id = item['data-webm-networkid']
@@ -47,26 +48,56 @@ def parse_item(item):
     state = item['data-webm-state']
     seller_type = item.find('span', class_='seller-type').contents[-1]
 
-    print(f"brand: {brand}")
-    print(f"model: {model}")
-    print(f"net_id: {net_id}")
-    print(f"price: {price}")
-    print(f"state: {state}")
-    print(f"seller_type: {seller_type}")
+    result = {
+        'brand': item['data-webm-make'],
+        'model': item['data-webm-model'],
+        'net_id': item['data-webm-networkid'],
+        'price': item['data-webm-price'],
+        'state': item['data-webm-state'],
+        'seller_type': item.find('span', class_='seller-type').contents[-1],
+    }
+    # print(f"brand: {brand}")
+    # print(f"model: {model}")
+    # print(f"net_id: {net_id}")
+    # print(f"price: {price}")
+    # print(f"state: {state}")
+    # print(f"seller_type: {seller_type}")
 
     for key_detail in item.find_all("div", class_="key-detail-value"):
         key_detail_type = key_detail['data-type'].lower().replace(" ", "_")
-        print(f"{key_detail_type}: {key_detail.contents[-1]}")
+        # print(f"{key_detail_type}: {key_detail.contents[-1]}")
+        result[key_detail_type]: key_detail.contents[-1]
+    return result
 
 
 if __name__ == '__main__':
+    base_url = "https://www.chileautos.cl"
     url = 'https://www.chileautos.cl/vehiculos/ssangyong/tivoli/'
 
-    html = get_html(url)
-    soup = BeautifulSoup(html, 'html.parser')
+    # html = get_html(url)
+    # soup = BeautifulSoup(html, 'html.parser')
+    #
+    # # listing-item standard
+    # # listing-item showcase # premium o otros intereses
+    # items = soup.find_all('div', class_='listing-item standard')
+    #
+    # parse_item(items[0])
 
-    # listing-item standard
-    # listing-item showcase # premium o otros intereses
-    items = soup.find_all('div', class_='listing-item standard')
-
-    parse_item(items[0])
+    PAGINATION_LIMIT = 5
+    for i in range(PAGINATION_LIMIT):
+        logger.info(f"Scraping [{url}]")
+        soup = BeautifulSoup(get_html(url), 'html.parser')
+        items = soup.find_all('div', class_='listing-item standard')
+        for item in items:
+            logger.debug(parse_item(item))
+        next_btn = soup.find('a', class_='page-link next')
+        if next_btn and 'href' in next_btn.attrs:
+            url = base_url + next_btn.attrs['href']
+            logger.info(f"Pagination - URL = [{url}]")
+            continue
+        next_btn = soup.find_all('a', class_='page-link next disabled')
+        if next_btn:
+            logger.info("Last page!")
+            break
+        else:
+            logger.error("PAGINATION ERROR")
