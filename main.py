@@ -12,7 +12,7 @@ logging.basicConfig(
     datefmt='%d-%b-%y %H:%M:%S')
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def get_html(url: str) -> str:
@@ -59,12 +59,6 @@ def parse_item(item):
         'seller_type': item.find('span', class_='seller-type').contents[-1],
         'year': year,
     }
-    # print(f"brand: {brand}")
-    # print(f"model: {model}")
-    # print(f"net_id: {net_id}")
-    # print(f"price: {price}")
-    # print(f"state: {state}")
-    # print(f"seller_type: {seller_type}")
 
     for key_detail in item.find_all("div", class_="key-detail-value"):
         key_detail_type = key_detail['data-type'].lower().replace(" ", "_")
@@ -75,16 +69,6 @@ def parse_item(item):
 
 def scraper(url: str, pagination_limit=5) -> None:
     base_url = "https://www.chileautos.cl"
-    # url = 'https://www.chileautos.cl/vehiculos/ssangyong/tivoli/'
-
-    # html = get_html(url)
-    # soup = BeautifulSoup(html, 'html.parser')
-    #
-    # # listing-item standard
-    # # listing-item showcase # premium o otros intereses
-    # items = soup.find_all('div', class_='listing-item standard')
-    #
-    # parse_item(items[0])
     result = []
     for i in range(pagination_limit):
         logger.info(f"Scraping [{url}]")
